@@ -1,6 +1,7 @@
 package pinot
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"strings"
@@ -29,7 +30,27 @@ func (c *Connection) ExecuteSQL(table string, query string) (*BrokerResponse, er
 		log.Errorf("Unable to find an available broker for table %s, Error: %v\n", table, err)
 		return nil, err
 	}
-	brokerResp, err := c.transport.execute(brokerAddress, &Request{
+	brokerResp, err := c.transport.execute(context.Background(), brokerAddress, &Request{
+		queryFormat:         "sql",
+		query:               query,
+		trace:               c.trace,
+		useMultistageEngine: c.useMultistageEngine,
+	})
+	if err != nil {
+		log.Errorf("Caught exception to execute SQL query %s, Error: %v\n", query, err)
+		return nil, err
+	}
+	return brokerResp, err
+}
+
+// ExecuteSQLWithContext for a given table
+func (c *Connection) ExecuteSQLWithContext(ctx context.Context, table string, query string) (*BrokerResponse, error) {
+	brokerAddress, err := c.brokerSelector.selectBroker(table)
+	if err != nil {
+		log.Errorf("Unable to find an available broker for table %s, Error: %v\n", table, err)
+		return nil, err
+	}
+	brokerResp, err := c.transport.execute(ctx, brokerAddress, &Request{
 		queryFormat:         "sql",
 		query:               query,
 		trace:               c.trace,

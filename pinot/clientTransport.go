@@ -1,5 +1,7 @@
 package pinot
 
+import "context"
+
 type clientTransport interface {
-	execute(brokerAddress string, query *Request) (*BrokerResponse, error)
+	execute(ctx context.Context, brokerAddress string, query *Request) (*BrokerResponse, error)
 }

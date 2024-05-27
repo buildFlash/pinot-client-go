@@ -1,6 +1,7 @@
 package pinot
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -18,18 +19,18 @@ func TestGetQueryTemplate(t *testing.T) {
 }
 
 func TestCreateHTTPRequest(t *testing.T) {
-	r, err := createHTTPRequest("localhost:8000", []byte(`{"sql": "select * from baseballStats limit 10"}`), map[string]string{"a": "b"})
+	r, err := createHTTPRequest(context.Background(), "localhost:8000", []byte(`{"sql": "select * from baseballStats limit 10"}`), map[string]string{"a": "b"})
 	assert.Nil(t, err)
 	assert.Equal(t, "POST", r.Method)
-	_, err = createHTTPRequest("localhos\t:8000", []byte(`{"sql": "select * from baseballStats limit 10"}`), map[string]string{"a": "b"})
+	_, err = createHTTPRequest(context.Background(), "localhos\t:8000", []byte(`{"sql": "select * from baseballStats limit 10"}`), map[string]string{"a": "b"})
 	assert.NotNil(t, err)
 }
 
 func TestCreateHTTPRequestWithTrace(t *testing.T) {
-	r, err := createHTTPRequest("localhost:8000", []byte(`{"sql": "select * from baseballStats limit 10", "trace": "true"}`), map[string]string{"a": "b"})
+	r, err := createHTTPRequest(context.Background(), "localhost:8000", []byte(`{"sql": "select * from baseballStats limit 10", "trace": "true"}`), map[string]string{"a": "b"})
 	assert.Nil(t, err)
 	assert.Equal(t, "POST", r.Method)
-	_, err = createHTTPRequest("localhos\t:8000", []byte(`{"sql": "select * from baseballStats limit 10", "trace": "true"}`), map[string]string{"a": "b"})
+	_, err = createHTTPRequest(context.Background(), "localhos\t:8000", []byte(`{"sql": "select * from baseballStats limit 10", "trace": "true"}`), map[string]string{"a": "b"})
 	assert.NotNil(t, err)
 }
 
@@ -38,20 +39,20 @@ func TestJsonAsyncHTTPClientTransport(t *testing.T) {
 		client: http.DefaultClient,
 		header: map[string]string{"a": "b"},
 	}
-	_, err := transport.execute("localhos\t:8000", &Request{
+	_, err := transport.execute(context.Background(), "localhos\t:8000", &Request{
 		queryFormat: "sql",
 		query:       "select * from baseballStats limit 10",
 	})
 	assert.NotNil(t, err)
 	assert.True(t, strings.HasPrefix(err.Error(), "parse "))
 
-	_, err = transport.execute("randomhost", &Request{
+	_, err = transport.execute(context.Background(), "randomhost", &Request{
 		queryFormat: "sql",
 		query:       "select * from baseballStats limit 10",
 	})
 	assert.NotNil(t, err)
 
-	_, err = transport.execute("localhost:18000", &Request{
+	_, err = transport.execute(context.Background(), "localhost:18000", &Request{
 		queryFormat:         "sql",
 		query:               "select * from baseballStats limit 10",
 		useMultistageEngine: true,

@@ -2,6 +2,7 @@ package pinot
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ type jsonAsyncHTTPClientTransport struct {
 	header map[string]string
 }
 
-func (t jsonAsyncHTTPClientTransport) execute(brokerAddress string, query *Request) (*BrokerResponse, error) {
+func (t jsonAsyncHTTPClientTransport) execute(ctx context.Context, brokerAddress string, query *Request) (*BrokerResponse, error) {
 	url := fmt.Sprintf(getQueryTemplate(query.queryFormat, brokerAddress), brokerAddress)
 	requestJSON := map[string]string{}
 	requestJSON[query.queryFormat] = query.query
@@ -48,7 +49,7 @@ func (t jsonAsyncHTTPClientTransport) execute(brokerAddress string, query *Reque
 		log.Error("Unable to marshal request to JSON. ", err)
 		return nil, err
 	}
-	req, err := createHTTPRequest(url, jsonValue, t.header)
+	req, err := createHTTPRequest(ctx, url, jsonValue, t.header)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +92,8 @@ func getQueryTemplate(queryFormat string, brokerAddress string) string {
 	return "http://%s/query"
 }
 
-func createHTTPRequest(url string, jsonValue []byte, extraHeader map[string]string) (*http.Request, error) {
-	r, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
+func createHTTPRequest(ctx context.Context, url string, jsonValue []byte, extraHeader map[string]string) (*http.Request, error) {
+	r, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		log.Error("Invalid HTTP Request", err)
 		return nil, err
